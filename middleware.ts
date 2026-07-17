@@ -1,0 +1,3 @@
+import {NextRequest,NextResponse} from 'next/server';import {jwtVerify} from 'jose';
+export async function middleware(r:NextRequest){const p=r.nextUrl.pathname;if(p.startsWith('/login')||p.startsWith('/api/auth')||p.startsWith('/_next')||p==='/favicon.ico')return NextResponse.next();const t=r.cookies.get('khn_session')?.value;if(!t)return NextResponse.redirect(new URL('/login',r.url));try{await jwtVerify(t,new TextEncoder().encode(process.env.AUTH_SECRET||'development-only-secret-change-me-now'));return NextResponse.next()}catch{return NextResponse.redirect(new URL('/login',r.url))}}
+export const config={matcher:['/((?!_next/static|_next/image).*)']};

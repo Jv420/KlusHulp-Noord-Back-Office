@@ -1,0 +1,1 @@
+import './globals.css';export const metadata={title:'KlusHulp Noord Administratie v6',description:'Administratie voor KlusHulp Noord'};export default function RootLayout({children}:{children:React.ReactNode}){return <html lang="nl"><body>{children}</body></html>}
