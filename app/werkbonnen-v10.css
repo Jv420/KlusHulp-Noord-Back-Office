@@ -1,0 +1,186 @@
+/* Werkbonnen Pro v10 — geïntegreerde ERP-uitstraling */
+body.khn-v10-shell main.page {
+  width: 100%;
+  max-width: none;
+  min-height: calc(100vh - 72px);
+  margin: 0;
+  padding: 32px;
+  background: #f3f5f4;
+  color: #17211e;
+}
+
+body.khn-v10-shell main.page > header {
+  position: relative;
+  overflow: hidden;
+  min-height: 176px;
+  padding: 34px;
+  border-radius: 24px;
+  background: linear-gradient(135deg,#102f28 0%,#173f35 62%,#23594b 100%);
+  box-shadow: 0 20px 45px rgba(16,47,40,.18);
+}
+
+body.khn-v10-shell main.page > header::after {
+  content: '';
+  position: absolute;
+  width: 280px;
+  height: 280px;
+  right: -70px;
+  top: -100px;
+  border-radius: 50%;
+  background: rgba(245,196,0,.18);
+}
+
+body.khn-v10-shell main.page > header > * {
+  position: relative;
+  z-index: 1;
+}
+
+body.khn-v10-shell main.page > header h1 {
+  color: #fff;
+  font-size: clamp(30px,4vw,42px);
+  letter-spacing: -.035em;
+}
+
+body.khn-v10-shell main.page > header p {
+  color: #d5e5df;
+  font-size: 15px;
+}
+
+body.khn-v10-shell main.page > header button {
+  background: #f5c400;
+  color: #17211e;
+  box-shadow: 0 8px 20px rgba(245,196,0,.22);
+}
+
+body.khn-v10-shell main.page > .stats {
+  grid-template-columns: repeat(4,minmax(0,1fr));
+  gap: 16px;
+  margin: 22px 0;
+}
+
+body.khn-v10-shell main.page > .stats article {
+  position: relative;
+  min-height: 118px;
+  padding: 20px 20px 20px 24px;
+  border: 1px solid #e1e7e4;
+  border-radius: 18px;
+  box-shadow: 0 10px 28px rgba(15,23,42,.055);
+}
+
+body.khn-v10-shell main.page > .stats article::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 18px;
+  bottom: 18px;
+  width: 4px;
+  border-radius: 0 6px 6px 0;
+  background: #f5c400;
+}
+
+body.khn-v10-shell main.page > .stats b {
+  color: #173f35;
+  font-size: 29px;
+  letter-spacing: -.03em;
+}
+
+body.khn-v10-shell main.page > .search {
+  max-width: 520px;
+  margin: 0 0 16px auto;
+  padding: 12px 14px;
+  border-color: #d7e0dc;
+  box-shadow: 0 5px 16px rgba(15,23,42,.04);
+}
+
+body.khn-v10-shell main.page > .card {
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid #e1e7e4;
+  border-radius: 20px;
+  box-shadow: 0 12px 32px rgba(15,23,42,.055);
+}
+
+body.khn-v10-shell main.page .tr.head {
+  background: #edf3f0;
+  color: #51615b;
+  text-transform: uppercase;
+  letter-spacing: .045em;
+  font-size: 11px;
+}
+
+body.khn-v10-shell main.page button.tr {
+  transition: background .16s ease,transform .16s ease;
+}
+
+body.khn-v10-shell main.page button.tr:hover {
+  background: #f8fbf9;
+  transform: translateX(2px);
+}
+
+body.khn-v10-shell main.page .badge {
+  font-weight: 750;
+  text-transform: capitalize;
+}
+
+body.khn-v10-shell main.page .badge.concept { background:#eef2f6; color:#475467; }
+body.khn-v10-shell main.page .badge.onderweg { background:#e0f2fe; color:#075985; }
+body.khn-v10-shell main.page .badge.bezig { background:#fff4cc; color:#8a5a00; }
+body.khn-v10-shell main.page .badge.gereed { background:#dcfae6; color:#067647; }
+body.khn-v10-shell main.page .badge.gefactureerd { background:#ede9fe; color:#6d28d9; }
+
+body.khn-v10-shell main.page .modal {
+  border-color: #dfe7e3;
+  border-radius: 20px;
+  box-shadow: 0 28px 80px rgba(15,23,42,.25);
+}
+
+body.khn-v10-shell main.page .detailHead {
+  padding-bottom: 14px;
+  border-bottom: 1px solid #edf1ef;
+}
+
+body.khn-v10-shell main.page .detailHead small {
+  color: #667a72;
+  font-weight: 800;
+}
+
+body.khn-v10-shell main.page nav button.active,
+body.khn-v10-shell main.page .statusbar button.active {
+  background: #173f35;
+}
+
+body.khn-v10-shell main.page .modal > button,
+body.khn-v10-shell main.page .actions button:last-child,
+body.khn-v10-shell main.page .inline button,
+body.khn-v10-shell main.page footer button:last-child {
+  background: #173f35;
+}
+
+body.khn-v10-shell main.page .line,
+body.khn-v10-shell main.page .note,
+body.khn-v10-shell main.page .signs article,
+body.khn-v10-shell main.page .photos figure {
+  border-color: #e1e7e4;
+}
+
+body.khn-v10-shell main.page footer {
+  background: #f8fbf9;
+  margin-left: -22px;
+  margin-right: -22px;
+  margin-bottom: -22px;
+  padding: 16px 22px;
+}
+
+@media(max-width:900px){
+  body.khn-v10-shell main.page { padding: 18px; }
+  body.khn-v10-shell main.page > header { padding: 26px; }
+  body.khn-v10-shell main.page > .stats { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+
+@media(max-width:620px){
+  body.khn-v10-shell main.page { padding: 12px; }
+  body.khn-v10-shell main.page > header { min-height: auto; padding: 22px; border-radius: 18px; }
+  body.khn-v10-shell main.page > .stats { grid-template-columns: 1fr; }
+  body.khn-v10-shell main.page > .stats article { min-height: 96px; }
+  body.khn-v10-shell main.page > .search { max-width: none; }
+}
