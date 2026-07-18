@@ -1,0 +1,277 @@
+/* Facturatie Pro v10 — geïntegreerde ERP-uitstraling */
+body.khn-v10-shell main.wrap {
+  width: 100%;
+  max-width: none;
+  min-height: calc(100vh - 72px);
+  margin: 0;
+  padding: 32px;
+  background: #f3f5f4;
+  color: #17211e;
+}
+
+body.khn-v10-shell main.wrap > header {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  min-height: 178px;
+  padding: 34px;
+  border: 0;
+  border-radius: 24px;
+  background: linear-gradient(135deg,#102f28 0%,#173f35 62%,#23594b 100%);
+  box-shadow: 0 20px 45px rgba(16,47,40,.18);
+}
+
+body.khn-v10-shell main.wrap > header::after {
+  content: '';
+  position: absolute;
+  width: 290px;
+  height: 290px;
+  right: -75px;
+  top: -105px;
+  border-radius: 50%;
+  background: rgba(245,196,0,.18);
+}
+
+body.khn-v10-shell main.wrap > header > * {
+  position: relative;
+  z-index: 1;
+}
+
+body.khn-v10-shell main.wrap > header h1 {
+  margin: 4px 0 8px;
+  color: #fff;
+  font-size: clamp(30px,4vw,44px);
+  line-height: 1.05;
+  letter-spacing: -.04em;
+}
+
+body.khn-v10-shell main.wrap > header p {
+  margin: 0;
+  color: #d5e5df;
+  font-size: 15px;
+}
+
+body.khn-v10-shell main.wrap > header small {
+  color: #f5c400;
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+body.khn-v10-shell main.wrap > header .actions {
+  padding: 12px;
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 16px;
+  background: rgba(255,255,255,.08);
+  backdrop-filter: blur(12px);
+}
+
+body.khn-v10-shell main.wrap > header .actions a,
+body.khn-v10-shell main.wrap > header .actions button {
+  min-height: 42px;
+  border-radius: 11px;
+  background: #fff;
+  color: #173f35;
+}
+
+body.khn-v10-shell main.wrap > header .actions button {
+  background: #f5c400;
+  color: #17211e;
+}
+
+body.khn-v10-shell main.wrap > .stats {
+  grid-template-columns: repeat(5,minmax(0,1fr));
+  gap: 14px;
+  margin: 22px 0;
+}
+
+body.khn-v10-shell main.wrap > .stats .stat {
+  position: relative;
+  overflow: hidden;
+  min-height: 116px;
+  padding: 20px 20px 20px 24px;
+  border: 1px solid #e1e7e4;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 10px 28px rgba(15,23,42,.055);
+}
+
+body.khn-v10-shell main.wrap > .stats .stat::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 18px;
+  bottom: 18px;
+  width: 4px;
+  border-radius: 0 6px 6px 0;
+  background: #f5c400;
+}
+
+body.khn-v10-shell main.wrap > .stats .stat b {
+  color: #173f35;
+  font-size: 27px;
+  letter-spacing: -.03em;
+}
+
+body.khn-v10-shell main.wrap > .tabs {
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 6px;
+  border: 1px solid #dfe7e3;
+  border-radius: 14px;
+  background: #e9efec;
+  width: fit-content;
+}
+
+body.khn-v10-shell main.wrap > .tabs button {
+  border-radius: 10px;
+  background: transparent;
+  color: #5e6f68;
+}
+
+body.khn-v10-shell main.wrap > .tabs button.active {
+  background: #173f35;
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(23,63,53,.2);
+}
+
+body.khn-v10-shell main.wrap > .card {
+  padding: 20px;
+  border: 1px solid #e1e7e4;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 12px 32px rgba(15,23,42,.055);
+}
+
+body.khn-v10-shell main.wrap .toolbar {
+  justify-content: space-between;
+  padding-bottom: 16px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid #edf1ef;
+}
+
+body.khn-v10-shell main.wrap .toolbar input {
+  min-height: 44px;
+  border-color: #d6e0dc;
+  border-radius: 12px;
+  background: #f8faf9;
+}
+
+body.khn-v10-shell main.wrap .tr {
+  border-bottom-color: #edf1ef;
+}
+
+body.khn-v10-shell main.wrap .tr:not(.head):hover {
+  background: #f7faf8;
+}
+
+body.khn-v10-shell main.wrap .tr.head {
+  color: #64736d;
+  background: #f8faf9;
+}
+
+body.khn-v10-shell main.wrap .badge {
+  border: 1px solid #dfe7e3;
+  color: #4f615a;
+  font-weight: 800;
+  text-transform: capitalize;
+}
+
+body.khn-v10-shell main.wrap .badge.betaald,
+body.khn-v10-shell main.wrap .badge.geaccepteerd {
+  border-color: #b7e4c4;
+  color: #166534;
+}
+
+body.khn-v10-shell main.wrap .badge.gedeeltelijk {
+  border-color: #fde68a;
+  color: #92400e;
+}
+
+body.khn-v10-shell main.wrap .mini button,
+body.khn-v10-shell main.wrap .buttonLink {
+  border-radius: 9px;
+  box-shadow: none;
+}
+
+body.khn-v10-shell main.wrap .mini button:disabled {
+  cursor: not-allowed;
+  opacity: .48;
+}
+
+body.khn-v10-shell main.wrap .overlay {
+  backdrop-filter: blur(5px);
+}
+
+body.khn-v10-shell main.wrap .modal {
+  border: 1px solid #dfe7e3;
+  border-radius: 22px;
+  box-shadow: 0 28px 70px rgba(15,23,42,.24);
+}
+
+body.khn-v10-shell main.wrap .modal h2 {
+  color: #173f35;
+  letter-spacing: -.025em;
+}
+
+body.khn-v10-shell main.wrap .modal input,
+body.khn-v10-shell main.wrap .modal select,
+body.khn-v10-shell main.wrap .modal textarea {
+  border-color: #d6e0dc;
+  border-radius: 11px;
+}
+
+body.khn-v10-shell main.wrap .modal input:focus,
+body.khn-v10-shell main.wrap .modal select:focus,
+body.khn-v10-shell main.wrap .modal textarea:focus,
+body.khn-v10-shell main.wrap .toolbar input:focus {
+  outline: 3px solid rgba(245,196,0,.2);
+  border-color: #d3aa00;
+}
+
+@media (max-width: 1200px) {
+  body.khn-v10-shell main.wrap > .stats {
+    grid-template-columns: repeat(3,minmax(0,1fr));
+  }
+}
+
+@media (max-width: 820px) {
+  body.khn-v10-shell main.wrap {
+    padding: 16px;
+  }
+
+  body.khn-v10-shell main.wrap > header {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 26px;
+    border-radius: 19px;
+  }
+
+  body.khn-v10-shell main.wrap > header .actions {
+    width: 100%;
+  }
+
+  body.khn-v10-shell main.wrap > .stats {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  body.khn-v10-shell main.wrap > .stats {
+    grid-template-columns: 1fr;
+  }
+
+  body.khn-v10-shell main.wrap > .tabs {
+    width: 100%;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+
+  body.khn-v10-shell main.wrap > .tabs button {
+    white-space: nowrap;
+  }
+}
