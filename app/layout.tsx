@@ -3,6 +3,7 @@ import './globals.css';
 import './version-v7.css';
 import './facturatie-v10.css';
 import './werkbonnen-v10.css';
+import './sprint-1-v10.css';
 import PwaRegister from '@/components/PwaRegister';
 import ModuleLauncher from '@/components/ModuleLauncher';
 
