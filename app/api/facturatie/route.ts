@@ -87,6 +87,7 @@ export async function GET(req:Request){
  const [payments]:any=await pool.query(`SELECT p.*,d.number document_number FROM payments p JOIN documents d ON d.id=p.document_id ${id?'WHERE p.document_id=?':''} ORDER BY p.payment_date DESC,p.id DESC`,id?[id]:[]);
  const [reminders]:any=await pool.query(`SELECT r.*,d.number document_number,c.name customer_name,c.company_name FROM payment_reminders r JOIN documents d ON d.id=r.document_id LEFT JOIN customers c ON c.id=d.customer_id ${id?'WHERE r.document_id=?':''} ORDER BY r.reminder_date DESC,r.id DESC`,id?[id]:[]);
  const [recurring]:any=await pool.query(`SELECT r.*,c.name customer_name,c.company_name FROM recurring_invoices r LEFT JOIN customers c ON c.id=r.customer_id ORDER BY r.next_invoice_date,r.id`);
+ const [customers]:any=await pool.query(`SELECT id,customer_number,name,company_name,email,payment_term,vat_rate FROM customers WHERE active<>0 ORDER BY COALESCE(NULLIF(company_name,''),name)`);
  const invoices=documents.filter((d:any)=>d.type==='factuur');
  const kpis={
   invoiced:invoices.reduce((a:number,d:any)=>a+Number(d.total||0),0),
@@ -95,7 +96,7 @@ export async function GET(req:Request){
   overdue:invoices.filter((d:any)=>d.due_date&&String(d.due_date).slice(0,10)<date()&&Number(d.outstanding_amount)>0).length,
   quotes:documents.filter((d:any)=>d.type==='offerte'&&!['geannuleerd','afgewezen'].includes(d.status)).length
  };
- return NextResponse.json({documents,payments,reminders,recurring,kpis});
+ return NextResponse.json({documents,payments,reminders,recurring,customers,kpis});
 }
 export async function POST(req:Request){
  const s:any=await session('data.write');if(!s)return NextResponse.json({error:'Geen toegang'},{status:403});await ensureSchema();const b=await req.json();
