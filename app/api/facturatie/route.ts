@@ -1,0 +1,128 @@
+import {NextResponse} from 'next/server';
+import pool from '@/lib/db';
+import {can,readSession} from '@/lib/auth';
+
+let ready=false;
+async function ensureSchema(){
+ if(ready)return;
+ await pool.query(`CREATE TABLE IF NOT EXISTS payments (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  document_id INT NOT NULL,
+  amount DECIMAL(12,2) NOT NULL,
+  payment_date DATE NOT NULL,
+  payment_method VARCHAR(40) NOT NULL DEFAULT 'bank',
+  reference VARCHAR(190) NULL,
+  notes TEXT NULL,
+  created_by VARCHAR(190) NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_payments_document(document_id),
+  INDEX idx_payments_date(payment_date)
+ ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+ await pool.query(`CREATE TABLE IF NOT EXISTS payment_reminders (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  document_id INT NOT NULL,
+  reminder_type VARCHAR(30) NOT NULL DEFAULT 'herinnering',
+  reminder_date DATE NOT NULL,
+  due_date DATE NULL,
+  status VARCHAR(30) NOT NULL DEFAULT 'concept',
+  subject VARCHAR(190) NULL,
+  message TEXT NULL,
+  sent_at DATETIME NULL,
+  created_by VARCHAR(190) NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_reminders_document(document_id),
+  INDEX idx_reminders_date(reminder_date),
+  INDEX idx_reminders_status(status)
+ ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+ await pool.query(`CREATE TABLE IF NOT EXISTS recurring_invoices (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  customer_id INT NOT NULL,
+  name VARCHAR(190) NOT NULL,
+  description TEXT NULL,
+  amount_ex_vat DECIMAL(12,2) NOT NULL DEFAULT 0,
+  vat_rate DECIMAL(5,2) NOT NULL DEFAULT 21,
+  interval_type VARCHAR(30) NOT NULL DEFAULT 'maandelijks',
+  next_invoice_date DATE NOT NULL,
+  active TINYINT(1) NOT NULL DEFAULT 1,
+  last_document_id INT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_recurring_customer(customer_id),
+  INDEX idx_recurring_next(next_invoice_date),
+  INDEX idx_recurring_active(active)
+ ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+ const [cols]:any=await pool.query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=? AND TABLE_NAME='documents'",[process.env.DB_NAME]);
+ const existing=new Set(cols.map((x:any)=>x.COLUMN_NAME));
+ const additions:Record<string,string>={
+  original_document_id:'INT NULL',
+  paid_amount:'DECIMAL(12,2) NOT NULL DEFAULT 0',
+  payment_status:"VARCHAR(30) NOT NULL DEFAULT 'open'",
+  sent_at:'DATETIME NULL',
+  paid_at:'DATETIME NULL',
+  external_payment_url:'TEXT NULL',
+  external_payment_provider:'VARCHAR(40) NULL'
+ };
+ for(const [name,definition] of Object.entries(additions))if(!existing.has(name))await pool.query(`ALTER TABLE documents ADD COLUMN \`${name}\` ${definition}`);
+ ready=true;
+}
+async function session(permission:string){const s=await readSession();return can(s,permission)?s:null}
+const actor=(s:any)=>s?.name||s?.email||'gebruiker';
+const date=()=>new Date().toISOString().slice(0,10);
+async function refreshPaymentStatus(documentId:number){
+ const [[doc],[paid]]:any=await Promise.all([
+  pool.query('SELECT total,status FROM documents WHERE id=?',[documentId]),
+  pool.query('SELECT COALESCE(SUM(amount),0) amount FROM payments WHERE document_id=?',[documentId])
+ ]);
+ if(!doc[0])return;
+ const total=Number(doc[0].total||0),amount=Number(paid[0]?.amount||0);
+ const paymentStatus=amount<=0?'open':amount+0.005>=total?'betaald':'gedeeltelijk';
+ await pool.query(`UPDATE documents SET paid_amount=?,payment_status=?,paid_at=${paymentStatus==='betaald'?'NOW()':'NULL'},status=CASE WHEN type='factuur' AND ?='betaald' THEN 'betaald' ELSE status END WHERE id=?`,[amount,paymentStatus,paymentStatus,documentId]);
+}
+export async function GET(req:Request){
+ const s=await session('data.read');if(!s)return NextResponse.json({error:'Geen toegang'},{status:403});await ensureSchema();
+ const url=new URL(req.url),id=Number(url.searchParams.get('id')||0);
+ const where=id?'WHERE d.id=?':'';
+ const [documents]:any=await pool.query(`SELECT d.*,c.name customer_name,c.company_name,c.email customer_email,COALESCE(p.paid,0) calculated_paid,GREATEST(d.total-COALESCE(p.paid,0),0) outstanding_amount FROM documents d LEFT JOIN customers c ON c.id=d.customer_id LEFT JOIN (SELECT document_id,SUM(amount) paid FROM payments GROUP BY document_id) p ON p.document_id=d.id ${where} ORDER BY d.issue_date DESC,d.id DESC`,id?[id]:[]);
+ if(id&&!documents.length)return NextResponse.json({error:'Document niet gevonden'},{status:404});
+ const [payments]:any=await pool.query(`SELECT p.*,d.number document_number FROM payments p JOIN documents d ON d.id=p.document_id ${id?'WHERE p.document_id=?':''} ORDER BY p.payment_date DESC,p.id DESC`,id?[id]:[]);
+ const [reminders]:any=await pool.query(`SELECT r.*,d.number document_number,c.name customer_name,c.company_name FROM payment_reminders r JOIN documents d ON d.id=r.document_id LEFT JOIN customers c ON c.id=d.customer_id ${id?'WHERE r.document_id=?':''} ORDER BY r.reminder_date DESC,r.id DESC`,id?[id]:[]);
+ const [recurring]:any=await pool.query(`SELECT r.*,c.name customer_name,c.company_name FROM recurring_invoices r LEFT JOIN customers c ON c.id=r.customer_id ORDER BY r.next_invoice_date,r.id`);
+ const invoices=documents.filter((d:any)=>d.type==='factuur');
+ const kpis={
+  invoiced:invoices.reduce((a:number,d:any)=>a+Number(d.total||0),0),
+  paid:invoices.reduce((a:number,d:any)=>a+Number(d.calculated_paid||0),0),
+  outstanding:invoices.reduce((a:number,d:any)=>a+Number(d.outstanding_amount||0),0),
+  overdue:invoices.filter((d:any)=>d.due_date&&String(d.due_date).slice(0,10)<date()&&Number(d.outstanding_amount)>0).length,
+  quotes:documents.filter((d:any)=>d.type==='offerte'&&!['geannuleerd','afgewezen'].includes(d.status)).length
+ };
+ return NextResponse.json({documents,payments,reminders,recurring,kpis});
+}
+export async function POST(req:Request){
+ const s:any=await session('data.write');if(!s)return NextResponse.json({error:'Geen toegang'},{status:403});await ensureSchema();const b=await req.json();
+ if(b.action==='payment'){
+  const documentId=Number(b.document_id),amount=Number(b.amount);
+  if(!documentId||amount<=0)return NextResponse.json({error:'Factuur en geldig bedrag zijn verplicht'},{status:400});
+  const [r]:any=await pool.query(`INSERT INTO payments(document_id,amount,payment_date,payment_method,reference,notes,created_by) VALUES(?,?,?,?,?,?,?)`,[documentId,amount,b.payment_date||date(),b.payment_method||'bank',b.reference||null,b.notes||null,actor(s)]);
+  await refreshPaymentStatus(documentId);return NextResponse.json({id:r.insertId});
+ }
+ if(b.action==='reminder'){
+  const documentId=Number(b.document_id);if(!documentId)return NextResponse.json({error:'Factuur ontbreekt'},{status:400});
+  const [r]:any=await pool.query(`INSERT INTO payment_reminders(document_id,reminder_type,reminder_date,due_date,status,subject,message,created_by) VALUES(?,?,?,?,?,?,?,?)`,[documentId,b.reminder_type||'herinnering',b.reminder_date||date(),b.due_date||null,b.status||'concept',b.subject||null,b.message||null,actor(s)]);return NextResponse.json({id:r.insertId});
+ }
+ if(b.action==='recurring'){
+  const d=b.data||{};if(!d.customer_id||!d.name||!d.next_invoice_date)return NextResponse.json({error:'Klant, naam en volgende factuurdatum zijn verplicht'},{status:400});
+  const [r]:any=await pool.query(`INSERT INTO recurring_invoices(customer_id,name,description,amount_ex_vat,vat_rate,interval_type,next_invoice_date,active) VALUES(?,?,?,?,?,?,?,?)`,[d.customer_id,d.name,d.description||null,Number(d.amount_ex_vat||0),Number(d.vat_rate??21),d.interval_type||'maandelijks',d.next_invoice_date,d.active===0?0:1]);return NextResponse.json({id:r.insertId});
+ }
+ if(b.action==='status'){
+  const id=Number(b.document_id);if(!id)return NextResponse.json({error:'Document ontbreekt'},{status:400});
+  await pool.query(`UPDATE documents SET status=?,sent_at=CASE WHEN ?='verzonden' AND sent_at IS NULL THEN NOW() ELSE sent_at END WHERE id=?`,[b.status,b.status,id]);return NextResponse.json({ok:true});
+ }
+ return NextResponse.json({error:'Ongeldige actie'},{status:400});
+}
+export async function DELETE(req:Request){
+ const s=await session('data.write');if(!s)return NextResponse.json({error:'Geen toegang'},{status:403});await ensureSchema();const url=new URL(req.url),type=url.searchParams.get('type'),id=Number(url.searchParams.get('id')||0);if(!id)return NextResponse.json({error:'Ongeldig item'},{status:400});
+ if(type==='payment'){const [rows]:any=await pool.query('SELECT document_id FROM payments WHERE id=?',[id]);await pool.query('DELETE FROM payments WHERE id=?',[id]);if(rows[0])await refreshPaymentStatus(Number(rows[0].document_id));}
+ else if(type==='reminder')await pool.query('DELETE FROM payment_reminders WHERE id=?',[id]);
+ else return NextResponse.json({error:'Ongeldig type'},{status:400});
+ return NextResponse.json({ok:true});
+}
