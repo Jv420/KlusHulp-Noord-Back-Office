@@ -1,11 +1,23 @@
+import type {Metadata,Viewport} from 'next';
 import './globals.css';
 import './version-v7.css';
+import PwaRegister from '@/components/PwaRegister';
 
-export const metadata={
- title:'KlusHulp Noord Administratie v7',
- description:'ERP en administratie voor KlusHulp Noord'
+export const metadata:Metadata={
+ title:'KlusHulp Noord Administratie',
+ description:'ERP en administratie voor KlusHulp Noord',
+ manifest:'/manifest.webmanifest',
+ appleWebApp:{capable:true,statusBarStyle:'default',title:'KlusHulp Noord'},
+ icons:{icon:'/icons/icon-192.svg',apple:'/icons/icon-192.svg'}
+};
+
+export const viewport:Viewport={
+ themeColor:'#173f35',
+ width:'device-width',
+ initialScale:1,
+ viewportFit:'cover'
 };
 
 export default function RootLayout({children}:{children:React.ReactNode}){
- return <html lang="nl"><body>{children}</body></html>
+ return <html lang="nl"><body>{children}<PwaRegister/></body></html>;
 }
