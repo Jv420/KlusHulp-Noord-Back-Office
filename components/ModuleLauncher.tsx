@@ -14,6 +14,7 @@ const menu:MenuItem[]=[
  {href:'/facturatie',label:'Offertes & facturen',icon:'🧾',group:'Administratie'},
  {href:'/voorraad',label:'Voorraad',icon:'📦',group:'Administratie'},
  {href:'/voertuigen',label:'Voertuigen',icon:'🚐',group:'Administratie'},
+ {href:'/rapportages',label:'Rapportages',icon:'📊',group:'Administratie'},
  {legacyLabel:'Urenregistratie',label:'Urenregistratie',icon:'⏱',group:'Beheer'},
  {legacyLabel:'Uitgaven',label:'Kosten & uitgaven',icon:'💶',group:'Beheer'},
  {href:'/beheer',label:'ZZP-beheer',icon:'👤',group:'Beheer'},
@@ -21,7 +22,7 @@ const menu:MenuItem[]=[
 ];
 
 const titles:Record<string,string>={
- '/':'Dashboard','/planning':'Planning','/werkbonnen':'Werkbonnen','/facturatie':'Offertes & facturen','/voorraad':'Voorraad','/voertuigen':'Voertuigen','/beheer':'ZZP-beheer'
+ '/':'Dashboard','/planning':'Planning','/werkbonnen':'Werkbonnen','/facturatie':'Offertes & facturen','/voorraad':'Voorraad','/voertuigen':'Voertuigen','/rapportages':'Rapportages','/beheer':'ZZP-beheer'
 };
 
 export default function ModuleLauncher(){
