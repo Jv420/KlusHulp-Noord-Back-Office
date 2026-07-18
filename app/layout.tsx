@@ -1,6 +1,7 @@
 import type {Metadata,Viewport} from 'next';
 import './globals.css';
 import './version-v7.css';
+import './facturatie-v10.css';
 import PwaRegister from '@/components/PwaRegister';
 import ModuleLauncher from '@/components/ModuleLauncher';
 
