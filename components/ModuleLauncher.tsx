@@ -11,7 +11,8 @@ const menu:MenuItem[]=[
  {legacyLabel:'Klanten',label:'Klanten',icon:'👥',group:'Werkruimte'},
  {href:'/planning',label:'Planning',icon:'📅',group:'Werkruimte'},
  {href:'/werkbonnen',label:'Werkbonnen',icon:'🛠',group:'Werkruimte'},
- {href:'/facturatie',label:'Offertes & facturen',icon:'🧾',group:'Administratie'},
+ {href:'/offertes',label:'Offertes',icon:'📄',group:'Administratie'},
+ {href:'/facturen',label:'Facturen',icon:'🧾',group:'Administratie'},
  {href:'/voorraad',label:'Voorraad',icon:'📦',group:'Administratie'},
  {href:'/voertuigen',label:'Voertuigen',icon:'🚐',group:'Administratie'},
  {href:'/rapportages',label:'Rapportages',icon:'📊',group:'Administratie'},
@@ -22,7 +23,7 @@ const menu:MenuItem[]=[
 ];
 
 const titles:Record<string,string>={
- '/':'Dashboard','/planning':'Planning','/werkbonnen':'Werkbonnen','/facturatie':'Offertes & facturen','/voorraad':'Voorraad','/voertuigen':'Voertuigen','/rapportages':'Rapportages','/beheer':'ZZP-beheer'
+ '/':'Dashboard','/planning':'Planning','/werkbonnen':'Werkbonnen','/offertes':'Offertes','/facturen':'Facturen','/facturatie':'Betalingen & herinneringen','/voorraad':'Voorraad','/voertuigen':'Voertuigen','/rapportages':'Rapportages','/beheer':'ZZP-beheer'
 };
 
 export default function ModuleLauncher(){
@@ -42,7 +43,7 @@ export default function ModuleLauncher(){
   if(target){target.click();setLegacyActive(label);setOpen(false);window.scrollTo({top:0,behavior:'smooth'})}
  }
 
- const pageTitle=pathname==='/'?legacyActive:(titles[pathname]||'Back Office');
+ const pageTitle=pathname==='/'?legacyActive:(titles[pathname]||pathname.startsWith('/facturatie/document/')?'Documentweergave':'Back Office');
  const results=useMemo(()=>query.trim()?menu.filter(item=>item.label.toLowerCase().includes(query.toLowerCase())):menu,[query]);
  const active=(item:MenuItem)=>item.legacyLabel?pathname==='/'&&legacyActive===item.legacyLabel:!!item.href&&(item.href==='/'?pathname==='/'&&legacyActive==='Dashboard':pathname.startsWith(item.href));
 
