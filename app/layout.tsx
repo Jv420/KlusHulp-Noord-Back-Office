@@ -5,8 +5,8 @@ import PwaRegister from '@/components/PwaRegister';
 import ModuleLauncher from '@/components/ModuleLauncher';
 
 export const metadata:Metadata={
- title:'KlusHulp Noord Back Office v9.4',
- description:'Complete mobiele backoffice voor KlusHulp Noord',
+ title:'KlusHulp Noord Back Office v10',
+ description:'Geïntegreerde ERP, planning, werkbonnen, facturatie, voorraad en bedrijfsbeheer voor KlusHulp Noord',
  manifest:'/manifest.webmanifest',
  appleWebApp:{capable:true,statusBarStyle:'default',title:'KlusHulp Noord'},
  icons:{icon:'/icons/icon-192.svg',apple:'/icons/icon-192.svg'}
@@ -20,5 +20,5 @@ export const viewport:Viewport={
 };
 
 export default function RootLayout({children}:{children:React.ReactNode}){
- return <html lang="nl"><body>{children}<ModuleLauncher/><PwaRegister/></body></html>;
+ return <html lang="nl"><body><ModuleLauncher/>{children}<PwaRegister/></body></html>;
 }
