@@ -2,83 +2,52 @@ import {NextResponse} from 'next/server';
 import pool from '@/lib/db';
 import {can,readSession} from '@/lib/auth';
 
+let ready=false;
 async function ensureSchema(){
- await pool.query(`CREATE TABLE IF NOT EXISTS customer_contacts (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  customer_id INT NOT NULL,
-  contact_type VARCHAR(40) NOT NULL DEFAULT 'notitie',
-  subject VARCHAR(190) NULL,
-  notes TEXT NOT NULL,
-  contact_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  created_by VARCHAR(190) NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_customer_contacts_customer (customer_id),
-  INDEX idx_customer_contacts_date (contact_date)
- ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`);
- await pool.query(`CREATE TABLE IF NOT EXISTS customer_tags (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  customer_id INT NOT NULL,
-  tag VARCHAR(80) NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY uniq_customer_tag (customer_id,tag),
-  INDEX idx_customer_tags_customer (customer_id)
- ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`);
+ if(ready)return;
+ await pool.query(`CREATE TABLE IF NOT EXISTS crm_contacts (id INT AUTO_INCREMENT PRIMARY KEY,customer_id INT NOT NULL,first_name VARCHAR(100) NOT NULL,last_name VARCHAR(100) NULL,role VARCHAR(120) NULL,email VARCHAR(190) NULL,phone VARCHAR(60) NULL,mobile VARCHAR(60) NULL,is_primary TINYINT(1) NOT NULL DEFAULT 0,notes TEXT NULL,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,INDEX idx_crm_contact_customer(customer_id),INDEX idx_crm_contact_email(email)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+ await pool.query(`CREATE TABLE IF NOT EXISTS crm_notes (id INT AUTO_INCREMENT PRIMARY KEY,customer_id INT NOT NULL,contact_id INT NULL,title VARCHAR(190) NULL,content TEXT NOT NULL,created_by VARCHAR(190) NULL,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,INDEX idx_crm_note_customer(customer_id),INDEX idx_crm_note_contact(contact_id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+ await pool.query(`CREATE TABLE IF NOT EXISTS crm_tasks (id INT AUTO_INCREMENT PRIMARY KEY,customer_id INT NULL,contact_id INT NULL,title VARCHAR(190) NOT NULL,description TEXT NULL,due_date DATE NULL,priority VARCHAR(20) NOT NULL DEFAULT 'normaal',status VARCHAR(30) NOT NULL DEFAULT 'open',assigned_to VARCHAR(190) NULL,completed_at DATETIME NULL,created_by VARCHAR(190) NULL,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,INDEX idx_crm_task_customer(customer_id),INDEX idx_crm_task_due(due_date),INDEX idx_crm_task_status(status)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+ await pool.query(`CREATE TABLE IF NOT EXISTS crm_activities (id INT AUTO_INCREMENT PRIMARY KEY,customer_id INT NOT NULL,contact_id INT NULL,activity_type VARCHAR(40) NOT NULL DEFAULT 'notitie',subject VARCHAR(190) NOT NULL,description TEXT NULL,activity_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,created_by VARCHAR(190) NULL,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,INDEX idx_crm_activity_customer(customer_id),INDEX idx_crm_activity_date(activity_at)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+ await pool.query(`CREATE TABLE IF NOT EXISTS crm_files (id INT AUTO_INCREMENT PRIMARY KEY,customer_id INT NOT NULL,contact_id INT NULL,file_name VARCHAR(255) NOT NULL,file_url TEXT NOT NULL,mime_type VARCHAR(120) NULL,description VARCHAR(255) NULL,uploaded_by VARCHAR(190) NULL,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,INDEX idx_crm_file_customer(customer_id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+ ready=true;
 }
+async function auth(permission:string){const s=await readSession();return can(s,permission)?s:null}
+const actor=(s:any)=>s?.name||s?.email||'gebruiker';
 
 export async function GET(req:Request){
- const session=await readSession();
- if(!can(session,'data.read'))return NextResponse.json({error:'Geen toegang'},{status:403});
- await ensureSchema();
- const id=Number(new URL(req.url).searchParams.get('id')||0);
- const [customers]:any=await pool.query(`SELECT c.*,
-  COUNT(DISTINCT d.id) document_count,
-  COALESCE(SUM(CASE WHEN d.type='factuur' AND d.status<>'geannuleerd' THEN d.total ELSE 0 END),0) total_revenue,
-  COALESCE(SUM(CASE WHEN d.type='factuur' AND d.status<>'geannuleerd' THEN GREATEST(d.total-COALESCE(pp.paid,0),0) ELSE 0 END),0) outstanding,
-  MAX(d.issue_date) last_document_date,
-  MAX(cc.contact_date) last_contact_date
-  FROM customers c
-  LEFT JOIN documents d ON d.customer_id=c.id
-  LEFT JOIN (SELECT document_id,SUM(amount) paid FROM payments GROUP BY document_id) pp ON pp.document_id=d.id
-  LEFT JOIN customer_contacts cc ON cc.customer_id=c.id
-  ${id?'WHERE c.id=?':''}
-  GROUP BY c.id ORDER BY COALESCE(MAX(cc.contact_date),MAX(d.issue_date)) DESC,c.id DESC`,id?[id]:[]);
- if(id&&!customers.length)return NextResponse.json({error:'Klant niet gevonden'},{status:404});
- if(!id)return NextResponse.json({customers});
- const [documents]:any=await pool.query(`SELECT d.*,COALESCE(SUM(p.amount),0) paid_amount,GREATEST(d.total-COALESCE(SUM(p.amount),0),0) outstanding_amount FROM documents d LEFT JOIN payments p ON p.document_id=d.id WHERE d.customer_id=? GROUP BY d.id ORDER BY d.issue_date DESC,d.id DESC`,[id]);
- const [contacts]:any=await pool.query(`SELECT * FROM customer_contacts WHERE customer_id=? ORDER BY contact_date DESC,id DESC`,[id]);
- const [tags]:any=await pool.query(`SELECT id,tag FROM customer_tags WHERE customer_id=? ORDER BY tag`,[id]);
- const [reminders]:any=await pool.query(`SELECT r.*,d.number FROM payment_reminders r JOIN documents d ON d.id=r.document_id WHERE d.customer_id=? ORDER BY r.reminder_date DESC,r.id DESC`,[id]).catch(()=>[[]] as any);
- return NextResponse.json({customer:customers[0],documents,contacts,tags,reminders});
+ const s=await auth('data.read');if(!s)return NextResponse.json({error:'Geen toegang'},{status:403});await ensureSchema();
+ const url=new URL(req.url),customerId=Number(url.searchParams.get('customer_id')||0),args=customerId?[customerId]:[];
+ const [[customers],[contacts],[notes],[tasks],[activities],[files],[revenue]]:any=await Promise.all([
+  pool.query(`SELECT c.*,(SELECT COUNT(*) FROM crm_contacts x WHERE x.customer_id=c.id) contact_count,(SELECT COUNT(*) FROM crm_tasks x WHERE x.customer_id=c.id AND x.status<>'gereed') open_task_count,(SELECT MAX(x.activity_at) FROM crm_activities x WHERE x.customer_id=c.id) last_activity FROM customers c ${customerId?'WHERE c.id=?':''} ORDER BY c.name`,args),
+  pool.query(`SELECT x.*,c.name customer_name FROM crm_contacts x LEFT JOIN customers c ON c.id=x.customer_id ${customerId?'WHERE x.customer_id=?':''} ORDER BY x.is_primary DESC,x.first_name`,args),
+  pool.query(`SELECT x.*,c.name customer_name,CONCAT_WS(' ',p.first_name,p.last_name) contact_name FROM crm_notes x LEFT JOIN customers c ON c.id=x.customer_id LEFT JOIN crm_contacts p ON p.id=x.contact_id ${customerId?'WHERE x.customer_id=?':''} ORDER BY x.created_at DESC LIMIT 500`,args),
+  pool.query(`SELECT x.*,c.name customer_name,CONCAT_WS(' ',p.first_name,p.last_name) contact_name FROM crm_tasks x LEFT JOIN customers c ON c.id=x.customer_id LEFT JOIN crm_contacts p ON p.id=x.contact_id ${customerId?'WHERE x.customer_id=?':''} ORDER BY (x.status='gereed'),x.due_date IS NULL,x.due_date,x.id DESC LIMIT 500`,args),
+  pool.query(`SELECT x.*,c.name customer_name,CONCAT_WS(' ',p.first_name,p.last_name) contact_name FROM crm_activities x LEFT JOIN customers c ON c.id=x.customer_id LEFT JOIN crm_contacts p ON p.id=x.contact_id ${customerId?'WHERE x.customer_id=?':''} ORDER BY x.activity_at DESC LIMIT 500`,args),
+  pool.query(`SELECT x.*,c.name customer_name FROM crm_files x LEFT JOIN customers c ON c.id=x.customer_id ${customerId?'WHERE x.customer_id=?':''} ORDER BY x.created_at DESC LIMIT 500`,args),
+  pool.query(`SELECT customer_id,COUNT(*) document_count,SUM(CASE WHEN type='factuur' AND status='betaald' THEN total ELSE 0 END) revenue,SUM(CASE WHEN type='factuur' AND status NOT IN ('betaald','geannuleerd') THEN total ELSE 0 END) outstanding FROM documents GROUP BY customer_id`)
+ ]);
+ const rm=Object.fromEntries(revenue.map((x:any)=>[Number(x.customer_id),x])),enriched=customers.map((x:any)=>({...x,...(rm[Number(x.id)]||{document_count:0,revenue:0,outstanding:0})})),today=new Date().toISOString().slice(0,10);
+ return NextResponse.json({customers:enriched,contacts,notes,tasks,activities,files,kpis:{customers:enriched.length,prospects:enriched.filter((x:any)=>x.status==='prospect').length,openTasks:tasks.filter((x:any)=>x.status!=='gereed').length,overdueTasks:tasks.filter((x:any)=>x.status!=='gereed'&&x.due_date&&String(x.due_date).slice(0,10)<today).length,revenue:enriched.reduce((a:number,x:any)=>a+Number(x.revenue||0),0),outstanding:enriched.reduce((a:number,x:any)=>a+Number(x.outstanding||0),0)}});
 }
 
 export async function POST(req:Request){
- const session:any=await readSession();
- if(!can(session,'data.write'))return NextResponse.json({error:'Geen toegang'},{status:403});
- await ensureSchema();
- const body=await req.json();
- const customerId=Number(body.customer_id);
- if(!Number.isInteger(customerId)||customerId<1)return NextResponse.json({error:'Ongeldige klant'},{status:400});
- if(body.action==='tag'){
-  const tag=String(body.tag||'').trim();
-  if(!tag)return NextResponse.json({error:'Vul een label in'},{status:400});
-  await pool.query(`INSERT IGNORE INTO customer_tags(customer_id,tag) VALUES(?,?)`,[customerId,tag.slice(0,80)]);
-  return NextResponse.json({ok:true});
- }
- const notes=String(body.notes||'').trim();
- if(!notes)return NextResponse.json({error:'Vul een notitie in'},{status:400});
- await pool.query(`INSERT INTO customer_contacts(customer_id,contact_type,subject,notes,contact_date,created_by) VALUES(?,?,?,?,?,?)`,[
-  customerId,String(body.contact_type||'notitie'),String(body.subject||'').trim()||null,notes,body.contact_date||new Date(),session?.email||session?.name||null
- ]);
- return NextResponse.json({ok:true});
+ const s:any=await auth('data.write');if(!s)return NextResponse.json({error:'Geen toegang'},{status:403});await ensureSchema();const b=await req.json(),d=b.data||{},by=actor(s);
+ if(b.action==='contact'){if(!d.customer_id||!d.first_name)return NextResponse.json({error:'Klant en voornaam zijn verplicht'},{status:400});if(d.is_primary)await pool.query('UPDATE crm_contacts SET is_primary=0 WHERE customer_id=?',[d.customer_id]);const [r]:any=await pool.query('INSERT INTO crm_contacts (customer_id,first_name,last_name,role,email,phone,mobile,is_primary,notes) VALUES (?,?,?,?,?,?,?,?,?)',[d.customer_id,d.first_name,d.last_name||null,d.role||null,d.email||null,d.phone||null,d.mobile||null,d.is_primary?1:0,d.notes||null]);await pool.query('INSERT INTO crm_activities (customer_id,contact_id,activity_type,subject,created_by) VALUES (?,?,?,?,?)',[d.customer_id,r.insertId,'contact','Contactpersoon toegevoegd',by]);return NextResponse.json({id:r.insertId});}
+ if(b.action==='note'){if(!d.customer_id||!d.content)return NextResponse.json({error:'Klant en notitie zijn verplicht'},{status:400});const [r]:any=await pool.query('INSERT INTO crm_notes (customer_id,contact_id,title,content,created_by) VALUES (?,?,?,?,?)',[d.customer_id,d.contact_id||null,d.title||null,d.content,by]);await pool.query('INSERT INTO crm_activities (customer_id,contact_id,activity_type,subject,description,created_by) VALUES (?,?,?,?,?,?)',[d.customer_id,d.contact_id||null,'notitie',d.title||'Notitie toegevoegd',d.content,by]);return NextResponse.json({id:r.insertId});}
+ if(b.action==='task'){if(!d.title)return NextResponse.json({error:'Taaknaam is verplicht'},{status:400});const [r]:any=await pool.query('INSERT INTO crm_tasks (customer_id,contact_id,title,description,due_date,priority,status,assigned_to,created_by) VALUES (?,?,?,?,?,?,?,?,?)',[d.customer_id||null,d.contact_id||null,d.title,d.description||null,d.due_date||null,d.priority||'normaal',d.status||'open',d.assigned_to||null,by]);if(d.customer_id)await pool.query('INSERT INTO crm_activities (customer_id,contact_id,activity_type,subject,description,created_by) VALUES (?,?,?,?,?,?)',[d.customer_id,d.contact_id||null,'taak',`Taak: ${d.title}`,d.description||null,by]);return NextResponse.json({id:r.insertId});}
+ if(b.action==='activity'){if(!d.customer_id||!d.subject)return NextResponse.json({error:'Klant en onderwerp zijn verplicht'},{status:400});const [r]:any=await pool.query('INSERT INTO crm_activities (customer_id,contact_id,activity_type,subject,description,activity_at,created_by) VALUES (?,?,?,?,?,?,?)',[d.customer_id,d.contact_id||null,d.activity_type||'contact',d.subject,d.description||null,d.activity_at||new Date(),by]);return NextResponse.json({id:r.insertId});}
+ if(b.action==='file'){if(!d.customer_id||!d.file_name||!d.file_url)return NextResponse.json({error:'Klant, bestandsnaam en URL zijn verplicht'},{status:400});const [r]:any=await pool.query('INSERT INTO crm_files (customer_id,contact_id,file_name,file_url,mime_type,description,uploaded_by) VALUES (?,?,?,?,?,?,?)',[d.customer_id,d.contact_id||null,d.file_name,d.file_url,d.mime_type||null,d.description||null,by]);await pool.query('INSERT INTO crm_activities (customer_id,contact_id,activity_type,subject,description,created_by) VALUES (?,?,?,?,?,?)',[d.customer_id,d.contact_id||null,'bestand',`Bestand toegevoegd: ${d.file_name}`,d.description||null,by]);return NextResponse.json({id:r.insertId});}
+ return NextResponse.json({error:'Ongeldige actie'},{status:400});
+}
+
+export async function PUT(req:Request){
+ const s=await auth('data.write');if(!s)return NextResponse.json({error:'Geen toegang'},{status:403});await ensureSchema();const b=await req.json(),d=b.data||{},id=Number(d.id);if(!id)return NextResponse.json({error:'ID ontbreekt'},{status:400});
+ if(b.action==='task'){const allowed=['customer_id','contact_id','title','description','due_date','priority','status','assigned_to','completed_at'],keys=allowed.filter(k=>Object.prototype.hasOwnProperty.call(d,k));if(d.status==='gereed'&&!keys.includes('completed_at')){keys.push('completed_at');d.completed_at=new Date()}if(!keys.length)return NextResponse.json({ok:true});await pool.query(`UPDATE crm_tasks SET ${keys.map(k=>'`'+k+'`=?').join(',')} WHERE id=?`,[...keys.map(k=>d[k]??null),id]);return NextResponse.json({ok:true});}
+ if(b.action==='contact'){if(d.is_primary&&d.customer_id)await pool.query('UPDATE crm_contacts SET is_primary=0 WHERE customer_id=?',[d.customer_id]);const allowed=['customer_id','first_name','last_name','role','email','phone','mobile','is_primary','notes'],keys=allowed.filter(k=>Object.prototype.hasOwnProperty.call(d,k));if(!keys.length)return NextResponse.json({ok:true});await pool.query(`UPDATE crm_contacts SET ${keys.map(k=>'`'+k+'`=?').join(',')} WHERE id=?`,[...keys.map(k=>d[k]??null),id]);return NextResponse.json({ok:true});}
+ return NextResponse.json({error:'Ongeldige actie'},{status:400});
 }
 
 export async function DELETE(req:Request){
- const session=await readSession();
- if(!can(session,'data.write'))return NextResponse.json({error:'Geen toegang'},{status:403});
- await ensureSchema();
- const url=new URL(req.url),id=Number(url.searchParams.get('id')||0),type=url.searchParams.get('type');
- if(!id)return NextResponse.json({error:'Ongeldig item'},{status:400});
- if(type==='tag')await pool.query('DELETE FROM customer_tags WHERE id=?',[id]);
- else await pool.query('DELETE FROM customer_contacts WHERE id=?',[id]);
- return NextResponse.json({ok:true});
+ const s=await auth('data.write');if(!s)return NextResponse.json({error:'Geen toegang'},{status:403});await ensureSchema();const b=await req.json(),id=Number(b.id),tables:any={contact:'crm_contacts',note:'crm_notes',task:'crm_tasks',activity:'crm_activities',file:'crm_files'},table=tables[b.action];if(!table||!id)return NextResponse.json({error:'Ongeldige verwijderactie'},{status:400});await pool.query(`DELETE FROM ${table} WHERE id=?`,[id]);return NextResponse.json({ok:true});
 }
