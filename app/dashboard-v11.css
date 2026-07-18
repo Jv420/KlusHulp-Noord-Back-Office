@@ -1,0 +1,53 @@
+/* KlusHulp Noord dashboard v11 — gericht op de dagelijkse bedrijfsvoering van één eigenaar */
+body.khn-v10-shell .shell>main{max-width:none!important;padding:28px!important}
+body.khn-v10-shell .shell>main>header{display:none!important}
+body.khn-v10-shell .shell>main>section{max-width:1480px;margin:0 auto}
+
+.dashboardWelcome{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between;gap:24px;padding:30px 32px;margin-bottom:22px;border-radius:24px;background:linear-gradient(135deg,#173f35,#24594b);color:#fff;box-shadow:0 18px 50px rgba(23,63,53,.16)}
+.dashboardWelcome:after{content:'KHN';position:absolute;right:24px;bottom:-34px;font-size:118px;font-weight:950;letter-spacing:-8px;color:rgba(255,255,255,.045);pointer-events:none}
+.dashboardWelcome h2{margin:0 0 8px;font-size:clamp(25px,3vw,38px);line-height:1.1;letter-spacing:-.035em}
+.dashboardWelcome h2 strong{color:#f5c400}
+.dashboardWelcome p{margin:0;color:#d6e5e0;font-size:15px}
+.dashboardBadge{position:relative;z-index:1;min-width:230px;padding:15px 18px;border:1px solid rgba(255,255,255,.16);border-radius:16px;background:rgba(255,255,255,.09);backdrop-filter:blur(8px)}
+.dashboardBadge b,.dashboardBadge span{display:block}
+.dashboardBadge b{text-transform:capitalize;font-size:14px}
+.dashboardBadge span{margin-top:5px;color:#bdd2cb;font-size:11px;letter-spacing:.05em;text-transform:uppercase}
+
+.stats{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px!important;margin:0 0 22px!important}
+.stats>.stat,.customerStats>.stat,.detailStats>.stat{position:relative;overflow:hidden;min-height:112px;padding:20px!important;border:1px solid #e1e7e4!important;border-radius:18px!important;background:#fff!important;box-shadow:0 10px 30px rgba(16,47,40,.055)!important}
+.stats>.stat:before{content:'';position:absolute;left:0;top:0;bottom:0;width:5px;background:#f5c400}
+.stats>.stat:nth-child(2):before{background:#2f8f68}
+.stats>.stat:nth-child(3):before{background:#d97706}
+.stats>.stat:nth-child(4):before{background:#2563eb}
+.stats .stat strong,.stats .stat b{font-size:clamp(24px,2.3vw,34px)!important;letter-spacing:-.035em;color:#173f35}
+.stats .stat span{font-weight:800;color:#263c35}
+.stats .stat small{margin-top:6px;color:#7b8984}
+
+.grid2{display:grid!important;grid-template-columns:minmax(0,1.18fr) minmax(340px,.82fr)!important;gap:20px!important;align-items:start}
+.panel{border:1px solid #e1e7e4!important;border-radius:20px!important;background:#fff!important;box-shadow:0 12px 36px rgba(16,47,40,.06)!important}
+.grid2>.panel{padding:22px!important}
+.panelHead{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid #edf1ef}
+.panelHead h2{margin:0;font-size:19px;color:#173f35}
+.panelHead small{display:block;margin-top:4px;color:#84918c}
+button.small{border:0!important;border-radius:10px!important;background:#eaf1ee!important;color:#173f35!important;padding:9px 12px!important;font-weight:800!important}
+
+.appointment{display:grid!important;grid-template-columns:54px minmax(0,1fr);align-items:center;gap:13px;padding:12px 0!important;border-bottom:1px solid #edf1ef}
+.dateBox{width:52px;height:52px;display:grid;place-items:center;align-content:center;border-radius:14px;background:#eef4f1;color:#173f35}
+.dateBox b{font-size:20px;line-height:1}
+.dateBox span{text-transform:uppercase;font-size:9px;font-weight:900;color:#6f817a}
+.appointmentContent b{display:block;color:#243630}
+.appointmentContent small{display:block;margin-top:5px;color:#7c8984;line-height:1.4}
+
+.quickActions{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px!important;margin-top:18px!important;padding-top:16px;border-top:1px solid #edf1ef}
+.quickActions button{min-height:44px;border:0!important;border-radius:12px!important;background:#173f35!important;color:#fff!important;font-weight:850!important;cursor:pointer}
+.quickActions button:nth-child(2){background:#f5c400!important;color:#17211e!important}
+.quickActions button:nth-child(3){background:#e9f0ed!important;color:#173f35!important}
+.quickActions button:hover{transform:translateY(-1px);filter:brightness(.98)}
+
+.attention{display:grid!important;grid-template-columns:42px minmax(0,1fr);gap:12px;align-items:center;padding:13px!important;margin-bottom:10px;border:1px solid #eee7d9;border-radius:14px;background:#fffbf2!important}
+.attentionIcon{width:40px;height:40px;display:grid;place-items:center;border-radius:12px;background:#fff3cc}
+.attention b{color:#3d3527}.attention small{color:#817664;line-height:1.45}
+.empty{color:#84918c!important}
+
+@media(max-width:1100px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.grid2{grid-template-columns:1fr!important}}
+@media(max-width:700px){body.khn-v10-shell .shell>main{padding:14px!important}.dashboardWelcome{align-items:flex-start;flex-direction:column;padding:24px 20px;border-radius:18px}.dashboardBadge{min-width:0;width:100%;box-sizing:border-box}.stats{grid-template-columns:1fr}.stats>.stat{min-height:94px}.quickActions{grid-template-columns:1fr!important}.grid2>.panel{padding:16px!important}}
