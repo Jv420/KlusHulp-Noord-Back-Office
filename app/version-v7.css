@@ -1,0 +1,11 @@
+/* Centrale versiecorrectie voor de bestaande v6.2-interface. */
+.logo small,
+.dashboardBadge span {
+  font-size: 0 !important;
+}
+
+.logo small::after,
+.dashboardBadge span::after {
+  content: 'Administratie v7';
+  font-size: 12px;
+}
