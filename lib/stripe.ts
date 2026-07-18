@@ -5,7 +5,7 @@ let client:Stripe|null=null;
 export function getStripe(){
  const key=process.env.STRIPE_SECRET_KEY;
  if(!key)throw new Error('STRIPE_SECRET_KEY ontbreekt');
- if(!client)client=new Stripe(key,{apiVersion:'2025-06-30.basil'});
+ if(!client)client=new Stripe(key);
  return client;
 }
 
