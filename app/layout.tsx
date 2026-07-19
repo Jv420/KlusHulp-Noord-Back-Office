@@ -5,6 +5,7 @@ import './facturatie-v10.css';
 import './werkbonnen-v10.css';
 import './sprint-1-v10.css';
 import './dashboard-v11.css';
+import './customers-v15.css';
 import PwaRegister from '@/components/PwaRegister';
 import ModuleLauncher from '@/components/ModuleLauncher';
 
