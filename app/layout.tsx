@@ -8,6 +8,7 @@ import './dashboard-v11.css';
 import './customers-v15.css';
 import PwaRegister from '@/components/PwaRegister';
 import ModuleLauncher from '@/components/ModuleLauncher';
+import CustomerRouteBridge from '@/components/customers/CustomerRouteBridge';
 
 export const metadata:Metadata={
  title:'KlusHulp Noord Back Office',
@@ -25,5 +26,5 @@ export const viewport:Viewport={
 };
 
 export default function RootLayout({children}:{children:React.ReactNode}){
- return <html lang="nl"><body><ModuleLauncher/>{children}<PwaRegister/></body></html>;
+ return <html lang="nl"><body><ModuleLauncher/><CustomerRouteBridge/>{children}<PwaRegister/></body></html>;
 }
